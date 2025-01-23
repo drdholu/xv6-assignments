@@ -16,6 +16,11 @@
 #include "file.h"
 #include "fcntl.h"
 
+int sys_hello(void){
+  cprintf("Hello world\n");
+  return 0;
+}
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
