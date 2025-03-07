@@ -1,0 +1,105 @@
+diff --git a/Makefile b/Makefile
+index 09d790c..3db77a4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -76,7 +76,8 @@ AS = $(TOOLPREFIX)gas
+ LD = $(TOOLPREFIX)ld
+ OBJCOPY = $(TOOLPREFIX)objcopy
+ OBJDUMP = $(TOOLPREFIX)objdump
+-CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
++# CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
++CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer
+ CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+ ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
+ # FreeBSD ld wants ``elf_i386_fbsd''
+@@ -181,6 +182,7 @@ UPROGS=\
+ 	_usertests\
+ 	_wc\
+ 	_zombie\
++	_tryhello\
+ 
+ fs.img: mkfs README $(UPROGS)
+ 	./mkfs fs.img README $(UPROGS)
+diff --git a/syscall.c b/syscall.c
+index ee85261..1e5198e 100644
+--- a/syscall.c
++++ b/syscall.c
+@@ -103,6 +103,7 @@ extern int sys_unlink(void);
+ extern int sys_wait(void);
+ extern int sys_write(void);
+ extern int sys_uptime(void);
++extern int sys_hello(void);
+ 
+ static int (*syscalls[])(void) = {
+ [SYS_fork]    sys_fork,
+@@ -126,6 +127,7 @@ static int (*syscalls[])(void) = {
+ [SYS_link]    sys_link,
+ [SYS_mkdir]   sys_mkdir,
+ [SYS_close]   sys_close,
++[SYS_hello]   sys_hello,
+ };
+ 
+ void
+diff --git a/syscall.h b/syscall.h
+index bc5f356..5f48d9b 100644
+--- a/syscall.h
++++ b/syscall.h
+@@ -20,3 +20,4 @@
+ #define SYS_link   19
+ #define SYS_mkdir  20
+ #define SYS_close  21
++#define SYS_hello  22
+diff --git a/sysfile.c b/sysfile.c
+index bfe61b7..e6f58c2 100644
+--- a/sysfile.c
++++ b/sysfile.c
+@@ -16,6 +16,11 @@
+ #include "file.h"
+ #include "fcntl.h"
+ 
++int sys_hello(void){
++  cprintf("Hello world\n");
++  return 0;
++}
++
+ // Fetch the nth word-sized system call argument as a file descriptor
+ // and return both the descriptor and the corresponding struct file.
+ static int
+diff --git a/tryhello.c b/tryhello.c
+new file mode 100644
+index 0000000..2c1050c
+--- /dev/null
++++ b/tryhello.c
+@@ -0,0 +1,10 @@
++#include "types.h"
++#include "stat.h"
++#include "user.h"
++#include "fs.h"
++
++int main(int argc, char *argv[]){
++    hello();
++
++    exit();
++}
+\ No newline at end of file
+diff --git a/user.h b/user.h
+index 4f99c52..f16f108 100644
+--- a/user.h
++++ b/user.h
+@@ -23,6 +23,7 @@ int getpid(void);
+ char* sbrk(int);
+ int sleep(int);
+ int uptime(void);
++int hello(void); // custom sys-call
+ 
+ // ulib.c
+ int stat(const char*, struct stat*);
+diff --git a/usys.S b/usys.S
+index 8bfd8a1..0072273 100644
+--- a/usys.S
++++ b/usys.S
+@@ -29,3 +29,4 @@ SYSCALL(getpid)
+ SYSCALL(sbrk)
+ SYSCALL(sleep)
+ SYSCALL(uptime)
++SYSCALL(hello)
