@@ -35,6 +35,37 @@ argfd(int n, int *pfd, struct file **pf)
   return 0;
 }
 
+int sys_lseek(void){
+  struct file *f;
+  int offset, whence, newoff;
+
+  if(argfd(0, 0, &f) < 0) return -1;
+  if(argint(1, &offset) < 0) return -1;
+  if(argint(2, &whence) < 0) return -1;
+
+
+  switch(whence){
+  case SEEK_SET:
+    newoff = offset;
+    break;
+  case SEEK_CUR:
+    newoff = f->off + offset;
+    break;
+  case SEEK_END:
+    if(f->type != FD_INODE) return -1;
+    ilock(f->ip);
+    newoff = f->ip->size + offset;
+    iunlock(f->ip);
+    break;
+  default:
+    return -1;
+  }
+  if(newoff < 0) return -1;
+  f->off = newoff;
+  return newoff;
+}
+
+
 // Allocate a file descriptor for the given file.
 // Takes over file reference from caller on success.
 static int

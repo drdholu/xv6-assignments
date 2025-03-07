@@ -1,0 +1,105 @@
+diff --git a/fcntl.h b/fcntl.h
+index d565483..900859a 100644
+--- a/fcntl.h
++++ b/fcntl.h
+@@ -2,3 +2,6 @@
+ #define O_WRONLY  0x001
+ #define O_RDWR    0x002
+ #define O_CREATE  0x200
++#define SEEK_SET 0
++#define SEEK_CUR 1
++#define SEEK_END 2
+\ No newline at end of file
+diff --git a/syscall.c b/syscall.c
+index ee85261..bb96e30 100644
+--- a/syscall.c
++++ b/syscall.c
+@@ -103,6 +103,7 @@ extern int sys_unlink(void);
+ extern int sys_wait(void);
+ extern int sys_write(void);
+ extern int sys_uptime(void);
++extern int sys_lseek(void);
+ 
+ static int (*syscalls[])(void) = {
+ [SYS_fork]    sys_fork,
+@@ -126,6 +127,7 @@ static int (*syscalls[])(void) = {
+ [SYS_link]    sys_link,
+ [SYS_mkdir]   sys_mkdir,
+ [SYS_close]   sys_close,
++[SYS_lseek]   sys_lseek,
+ };
+ 
+ void
+diff --git a/syscall.h b/syscall.h
+index bc5f356..80d44da 100644
+--- a/syscall.h
++++ b/syscall.h
+@@ -20,3 +20,4 @@
+ #define SYS_link   19
+ #define SYS_mkdir  20
+ #define SYS_close  21
++#define	SYS_lseek  22
+\ No newline at end of file
+diff --git a/sysfile.c b/sysfile.c
+index bfe61b7..826b41a 100644
+--- a/sysfile.c
++++ b/sysfile.c
+@@ -35,6 +35,37 @@ argfd(int n, int *pfd, struct file **pf)
+   return 0;
+ }
+ 
++int sys_lseek(void){
++  struct file *f;
++  int offset, whence, newoff;
++
++  if(argfd(0, 0, &f) < 0) return -1;
++  if(argint(1, &offset) < 0) return -1;
++  if(argint(2, &whence) < 0) return -1;
++
++
++  switch(whence){
++  case SEEK_SET:
++    newoff = offset;
++    break;
++  case SEEK_CUR:
++    newoff = f->off + offset;
++    break;
++  case SEEK_END:
++    if(f->type != FD_INODE) return -1;
++    ilock(f->ip);
++    newoff = f->ip->size + offset;
++    iunlock(f->ip);
++    break;
++  default:
++    return -1;
++  }
++  if(newoff < 0) return -1;
++  f->off = newoff;
++  return newoff;
++}
++
++
+ // Allocate a file descriptor for the given file.
+ // Takes over file reference from caller on success.
+ static int
+diff --git a/user.h b/user.h
+index 4f99c52..7f73067 100644
+--- a/user.h
++++ b/user.h
+@@ -23,6 +23,7 @@ int getpid(void);
+ char* sbrk(int);
+ int sleep(int);
+ int uptime(void);
++int lseek(int fd, int offset, int whence);
+ 
+ // ulib.c
+ int stat(const char*, struct stat*);
+diff --git a/usys.S b/usys.S
+index 8bfd8a1..6244300 100644
+--- a/usys.S
++++ b/usys.S
+@@ -29,3 +29,4 @@ SYSCALL(getpid)
+ SYSCALL(sbrk)
+ SYSCALL(sleep)
+ SYSCALL(uptime)
++SYSCALL(lseek)
