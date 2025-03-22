@@ -1,5 +1,5 @@
 diff --git a/fcntl.h b/fcntl.h
-index d565483..900859a 100644
+index d565483..5cd29b6 100644
 --- a/fcntl.h
 +++ b/fcntl.h
 @@ -2,3 +2,6 @@
@@ -9,7 +9,6 @@ index d565483..900859a 100644
 +#define SEEK_SET 0
 +#define SEEK_CUR 1
 +#define SEEK_END 2
-\ No newline at end of file
 diff --git a/syscall.c b/syscall.c
 index ee85261..bb96e30 100644
 --- a/syscall.c
@@ -31,7 +30,7 @@ index ee85261..bb96e30 100644
  
  void
 diff --git a/syscall.h b/syscall.h
-index bc5f356..80d44da 100644
+index bc5f356..bcc57a9 100644
 --- a/syscall.h
 +++ b/syscall.h
 @@ -20,3 +20,4 @@
@@ -39,7 +38,6 @@ index bc5f356..80d44da 100644
  #define SYS_mkdir  20
  #define SYS_close  21
 +#define	SYS_lseek  22
-\ No newline at end of file
 diff --git a/sysfile.c b/sysfile.c
 index bfe61b7..826b41a 100644
 --- a/sysfile.c
