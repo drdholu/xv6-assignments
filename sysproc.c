@@ -89,3 +89,15 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_printidt(void)
+{
+  struct gatedesc *idt = idt; // Access the IDT
+  cprintf("Printing IDT entries:\n");
+  for (int i = 0; i < 256; i++) {
+    cprintf("Entry %d: off_15_0=%x, cs=%x, args=%x, rsv1=%x, type=%x, s=%x, dpl=%x, p=%x, off_31_16=%x\n",
+            i, idt[i].off_15_0, idt[i].cs, idt[i].args, idt[i].rsv1, idt[i].type, idt[i].s, idt[i].dpl, idt[i].p, idt[i].off_31_16);
+  }
+  return 0;
+}
